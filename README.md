@@ -9,7 +9,11 @@ A Tensorflow implementation of [SampleRNN: An Unconditional End-to-End Neural Au
 ## Dataset  
 We used the pinao music of 74 minutes as the training corpus, and you can use any corpus containing ".wav" files to instead as well.
 ## Example
-
+## FEATURES
+- [ ] 2-tier SampleRNN
+- [x] 3-tier SampleRNN
+- [ ] Quantization in linear. 
+- [x] Quantization in mu-law. 
 
 ## Training 
 ```shell
