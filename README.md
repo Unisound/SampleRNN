@@ -3,12 +3,13 @@
 A Tensorflow implementation of [SampleRNN: An Unconditional End-to-End Neural Audio Generation Model](https://arxiv.org/abs/1612.07837).
 
 ## Requirements
-- tensroflow 1.0  
-- python 2.7  
-- librosa   
+- Tensroflow 1.0  
+- Python 2.7  
+- Librosa   
 ## Dataset  
 We used the pinao music of 74 minutes as the training corpus, and you can use any corpus containing ".wav" files to instead as well.
-## Example
+## Samples 
+- [Tensorflow-SampleRnn samples](https://soundcloud.com/xue-ruiqing/sets/tensorflow-samplernn)
 ## FEATURES
 - [ ] 2-tier SampleRNN
 - [x] 3-tier SampleRNN
