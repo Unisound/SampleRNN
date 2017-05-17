@@ -9,10 +9,11 @@ A Tensorflow implementation of [SampleRNN: An Unconditional End-to-End Neural Au
 ## Dataset  
 We used the pinao music of 74 minutes as the training corpus, and you can use any corpus containing ".wav" files to instead as well.
 ## Samples 
+- [Mandarin](https://soundcloud.com/xue-ruiqing/sets/tensorflow-samplernn-mandarin)
 - [Pinao samples](https://soundcloud.com/xue-ruiqing/sets/tensorflow-samplernn)
 - [Pinao samples_2](https://soundcloud.com/xue-ruiqing/sets/tensorflow-samplernn_2)
 ## Pretrained model
-- [logdir](https://drive.google.com/file/d/0B2MbqozKaoOQMW9PeHA1ZWNlTGc/view?usp=sharing)
+- [logdir(pinao)](https://drive.google.com/file/d/0B2MbqozKaoOQMW9PeHA1ZWNlTGc/view?usp=sharing)
 ## FEATURES
 - [ ] 2-tier SampleRNN
 - [x] 3-tier SampleRNN
