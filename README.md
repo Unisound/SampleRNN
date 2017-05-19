@@ -8,7 +8,7 @@ A Tensorflow implementation of [SampleRNN: An Unconditional End-to-End Neural Au
 - Librosa   
 ## Dataset  
 We used the pinao music of 74 minutes as the training corpus, and you can use any corpus containing ".wav" files to instead as well.  
-For Mandarin samples, we used human voice of 7.7 hours as the training corpus .
+For Mandarin samples, we used human voice of 6 hours as the training corpus .
 ## Samples 
 - [Mandarin samples](https://pan.baidu.com/s/1o8M8bGI)
 - [Pinao samples](https://soundcloud.com/xue-ruiqing/sets/tensorflow-samplernn)
