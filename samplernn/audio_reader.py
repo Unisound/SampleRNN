@@ -11,9 +11,11 @@ import numpy as np
 import tensorflow as tf
 
 def randomize_files(files):
-  for file in files:
-    file_index = random.randint(0, (len(files) - 1)) 
-    yield files[file_index]
+  files_idx= [i for i in xrange(len(files))]
+  random.shuffle(files_idx)
+
+  for idx in xrange(len(files)):
+    yield files[files_idx[idx]]
 
 def find_files(directory, pattern='*.wav'):
   '''Recursively finds all files matching the pattern.'''
