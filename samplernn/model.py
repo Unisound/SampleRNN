@@ -22,6 +22,7 @@ class SampleRnnModel(object):
       def single_cell():
         return tf.contrib.rnn.BasicLSTMCell(self.dim)
     self.cell = single_cell()
+    self.big_cell = single_cell()
     if self.n_rnn > 1:
       self.cell = tf.contrib.rnn.MultiRNNCell(
              [single_cell() for _ in range(self.n_rnn)])
@@ -60,7 +61,7 @@ class SampleRnnModel(object):
       with tf.variable_scope("BIG_FRAME_RNN"):
         for time_step in range(num_steps):
           if time_step > 0: tf.get_variable_scope().reuse_variables()
-          (big_frame_cell_output, big_frame_state) = self.cell(big_input_frames[:, time_step, :], big_frame_state)
+          (big_frame_cell_output, big_frame_state) = self.big_cell(big_input_frames[:, time_step, :], big_frame_state)
           big_frame_outputs.append(math_ops.matmul(big_frame_cell_output, big_frame_proj_weights))
         final_big_frame_state = big_frame_state
       big_frame_outputs = tf.stack(big_frame_outputs) 
