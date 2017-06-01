@@ -26,7 +26,10 @@ class SampleRnnModel(object):
     if self.n_rnn > 1:
       self.cell = tf.contrib.rnn.MultiRNNCell(
              [single_cell() for _ in range(self.n_rnn)])
+      self.big_cell = tf.contrib.rnn.MultiRNNCell(
+             [single_cell() for _ in range(self.n_rnn)])
     self.initial_state   = self.cell.zero_state(self.batch_size, tf.float32)
+    self.big_initial_state   = self.big_cell.zero_state(self.batch_size, tf.float32)
 
   def _one_hot(self, input_batch):
     '''One-hot encodes the waveform amplitudes.
