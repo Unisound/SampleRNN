@@ -167,7 +167,7 @@ def create_gen_wav_para(net):
 	tf.get_variable("infe_sample_inp", 
 		[net.batch_size, net.frame_size,1], dtype=tf.int32)
 
-    infe_para['infe_big_frame_state'] = net.cell.zero_state(net.batch_size, tf.float32)
+    infe_para['infe_big_frame_state'] = net.big_cell.zero_state(net.batch_size, tf.float32)
     infe_para['infe_frame_state']     = net.cell.zero_state(net.batch_size, tf.float32)
 
     tf.get_variable_scope().reuse_variables()
@@ -208,7 +208,7 @@ def generate_and_save_samples(step, net, infe_para, sess):
   samples = np.zeros((net.batch_size, LENGTH, 1), dtype='int32')
   samples[:, :net.big_frame_size,:] = np.int32(net.q_levels//2)
 
-  final_big_s,final_s = sess.run([net.initial_state,net.initial_state])
+  final_big_s,final_s = sess.run([net.big_initial_state,net.initial_state])
   big_frame_out = None
   frame_out = None
   sample_out = None
@@ -287,8 +287,8 @@ def main():
   for i in xrange(args.num_gpus):
     train_input_batch_rnn.append(tf.Variable( tf.zeros([net.batch_size, net.seq_len,1]), 
                       trainable=False ,name="input_batch_rnn", dtype=tf.float32))
-    train_big_frame_state.append(net.cell.zero_state(net.batch_size, tf.float32))
-    final_big_frame_state.append(net.cell.zero_state(net.batch_size, tf.float32))
+    train_big_frame_state.append(net.big_cell.zero_state(net.batch_size, tf.float32))
+    final_big_frame_state.append(net.big_cell.zero_state(net.batch_size, tf.float32))
     train_frame_state.append    (net.cell.zero_state(net.batch_size, tf.float32))
     final_frame_state.append    (net.cell.zero_state(net.batch_size, tf.float32))
   with tf.variable_scope(tf.get_variable_scope()):
@@ -363,7 +363,7 @@ def main():
       final_big_s = []
       final_s = []
       for g in xrange(args.num_gpus):
-        final_big_s.append(sess.run(net.initial_state))
+        final_big_s.append(sess.run(net.big_initial_state))
         final_s.append(sess.run(net.initial_state))
       start_time = time.time()
       inputslist = [sess.run(audio_batch) for i in xrange(args.num_gpus)]
