@@ -11,7 +11,8 @@ We used the pinao music of 74 minutes as the training corpus, and you can use an
 For Mandarin samples, we used human voice of 6 hours as the training corpus .
 ## Samples 
 - [Mandarin samples](https://pan.baidu.com/s/1o8M8bGI)
-- [Pinao samples](https://soundcloud.com/xue-ruiqing/sets/tensorflow-samplernn)
+- [Pinao samples](https://pan.baidu.com/s/1eSuzZz0?errno=0&errmsg=Auth%20Login%20Sucess&&bduss=&ssnerror=0#list/path=%2F)
+- [Pinao samples_1](https://soundcloud.com/xue-ruiqing/sets/tensorflow-samplernn)
 - [Pinao samples_2](https://soundcloud.com/xue-ruiqing/sets/tensorflow-samplernn_2)
 ## Pretrained model
 - [logdir(pinao)](https://drive.google.com/file/d/0B2MbqozKaoOQMW9PeHA1ZWNlTGc/view?usp=sharing)
