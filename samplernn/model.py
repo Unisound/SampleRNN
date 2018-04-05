@@ -46,6 +46,10 @@ class SampleRnnModel(object):
       encoded = tf.reshape(encoded, shape)
     return encoded
 
+  def _decode_one_hot(self, input_batch):
+    # Assume that the last dim is the
+    return tf.argmax(input_batch, axis=-1)
+
   def _create_network_BigFrame(self,
     		num_steps,
     		big_frame_state,
@@ -188,13 +192,18 @@ class SampleRnnModel(object):
       raw_output, final_big_frame_state, final_frame_state = \
       self._create_network_SampleRnn( train_big_frame_state, train_frame_state)
       with tf.name_scope('loss'):
+        # Target
         target_output_rnn = encoded_rnn[:,self.big_frame_size:,:]
         target_output_rnn = tf.reshape(target_output_rnn, [-1, self.q_levels])
-        prediction = tf.reshape(raw_output, [-1, self.q_levels])
+        target_output_rnn_decoded = self._decode_one_hot(target_output_rnn)
 
-        loss = tf.nn.softmax_cross_entropy_with_logits( 
+        # Prediction
+        prediction = tf.reshape(raw_output, [-1, self.q_levels])
+        
+        # Loss
+        loss = tf.nn.sparse_softmax_cross_entropy_with_logits( 
             logits=prediction, 
-            labels=target_output_rnn)
+            labels=target_output_rnn_decoded)
         reduced_loss = tf.reduce_mean(loss)
         tf.summary.scalar('loss', reduced_loss)
         if l2_regularization_strength is None:
