@@ -97,7 +97,7 @@ class AudioReader(object):
                                 np.full((pad_elements, 1), 0.0, dtype='float32')],
                                 axis=0)
         if self.sample_size:
-          while len(audio) > self.sample_size:
+          while len(audio) >= self.sample_size:
             piece = audio[:self.sample_size, :]
             sess.run(self.enqueue,
                      feed_dict={self.sample_placeholder: piece})
