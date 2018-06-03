@@ -53,7 +53,7 @@ class SampleRnnModel(object):
     with tf.variable_scope('BigFrame_layer'):
       big_input_frames = tf.reshape(big_input_sequences,[
                             tf.shape(big_input_sequences)[0],
-                            tf.shape(big_input_sequences)[1] / self.big_frame_size,
+                            tf.shape(big_input_sequences)[1] // self.big_frame_size,
                             self.big_frame_size])
       big_input_frames = (big_input_frames / self.q_levels/2.0) - 1.0
       big_input_frames *= 2.0
@@ -71,7 +71,7 @@ class SampleRnnModel(object):
       big_frame_outputs = tf.transpose(big_frame_outputs, perm=[1, 0, 2])
       big_frame_outputs = tf.reshape(big_frame_outputs,
       	                             [tf.shape(big_frame_outputs)[0],
-                                      tf.shape(big_frame_outputs)[1] * self.big_frame_size/self.frame_size,
+                                      tf.shape(big_frame_outputs)[1] * self.big_frame_size // self.frame_size,
                                      -1])
       return big_frame_outputs,final_big_frame_state
   def _create_network_Frame(self,
@@ -82,7 +82,7 @@ class SampleRnnModel(object):
     with tf.variable_scope('Frame_layer'):
       input_frames = tf.reshape(input_sequences,[
                         tf.shape(input_sequences)[0],
-                        tf.shape(input_sequences)[1] / self.frame_size,
+                        tf.shape(input_sequences)[1] // self.frame_size,
                         self.frame_size])
       input_frames = (input_frames / self.q_levels/2.0) - 1.0
       input_frames *= 2.0
@@ -146,7 +146,7 @@ class SampleRnnModel(object):
       out = math_ops.matmul(out, sample_mlp2_weights)
       out = tf.nn.relu(out)
       out = math_ops.matmul(out, sample_mlp3_weights)
-      out = tf.reshape(out, [-1, sample_shap[1]/self.emb_size - 1, self.q_levels])
+      out = tf.reshape(out, [-1, sample_shap[1] // self.emb_size - 1, self.q_levels])
       return out
   def _create_network_SampleRnn(self,
     		train_big_frame_state,
@@ -155,7 +155,7 @@ class SampleRnnModel(object):
       #big frame 
       big_input_sequences = tf.cast(self.encoded_input_rnn, tf.float32)\
     				[:,:-self.big_frame_size,:]
-      big_frame_num_steps = (self.seq_len-self.big_frame_size)/self.big_frame_size
+      big_frame_num_steps = (self.seq_len-self.big_frame_size) // self.big_frame_size
       big_frame_outputs,\
       final_big_frame_state = \
     		self._create_network_BigFrame(num_steps = big_frame_num_steps, 
@@ -164,7 +164,7 @@ class SampleRnnModel(object):
       #frame 
       input_sequences = tf.cast(self.encoded_input_rnn, tf.float32)[:, 
                               self.big_frame_size-self.frame_size:-self.frame_size, :]
-      frame_num_steps = (self.seq_len-self.big_frame_size)/self.frame_size
+      frame_num_steps = (self.seq_len-self.big_frame_size) // self.frame_size
       frame_outputs, final_frame_state  = \
     	self._create_network_Frame(num_steps = frame_num_steps,
       				big_frame_outputs = big_frame_outputs,

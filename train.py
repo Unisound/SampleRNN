@@ -14,18 +14,19 @@ from samplernn import SampleRnnModel, AudioReader, mu_law_decode, optimizer_fact
 
 DATA_DIRECTORY = './pinao-corpus'
 LOGDIR_ROOT = './logdir'
-CHECKPOINT_EVERY = 20
+CHECKPOINT_EVERY = 5
+GENERATE_EVERY = 10
 NUM_STEPS = int(1e5)
 LEARNING_RATE = 1e-3
 SAMPLE_SIZE = 100000
 L2_REGULARIZATION_STRENGTH = 0
-SILENCE_THRESHOLD = 0.3
+SILENCE_THRESHOLD = None
 MOMENTUM = 0.9
 MAX_TO_KEEP = 5
 
 N_SECS = 3
-SAMPLE_RATE = 16000
-LENGTH = N_SECS*SAMPLE_RATE
+SAMPLE_RATE = 22050
+LENGTH = N_SECS * SAMPLE_RATE
 
 BATCH_SIZE = 1
 NUM_GPU = 1
@@ -51,7 +52,7 @@ def get_arguments():
   parser.add_argument('--frame_size',       type=int, required=True)
   parser.add_argument('--q_levels',         type=int, required=True)
   parser.add_argument('--dim',              type=int, required=True)
-  parser.add_argument('--n_rnn',            type=int, choices=xrange(1,6), required=True)
+  parser.add_argument('--n_rnn',            type=int, choices=list(range(1,6)), required=True)
   parser.add_argument('--emb_size',         type=int, required=True)
   parser.add_argument('--rnn_type', choices=['LSTM', 'GRU'], required=True)
   parser.add_argument('--max_checkpoints',  type=int, default=MAX_TO_KEEP)
@@ -212,7 +213,7 @@ def generate_and_save_samples(step, net, infe_para, sess):
   big_frame_out = None
   frame_out = None
   sample_out = None
-  for t in xrange(net.big_frame_size, LENGTH):
+  for t in range(net.big_frame_size, LENGTH):
     #big frame 
     if t % net.big_frame_size == 0:
       big_frame_out = None
@@ -226,14 +227,18 @@ def generate_and_save_samples(step, net, infe_para, sess):
     #frame 
     if t % net.frame_size == 0:
       frame_input_sequences = samples[:, t-net.frame_size:t,:].astype('float32')
-      big_frame_output_idx = (t/net.frame_size)%(net.big_frame_size/net.frame_size)
-      frame_out, final_s= \
-      sess.run([infe_para['infe_frame_outp'], 
-		infe_para['infe_final_frame_state']],
-              feed_dict={
-	infe_para['infe_big_frame_outp_slices'] : big_frame_out[:,[big_frame_output_idx],:],
-	infe_para['infe_frame_inp'] : frame_input_sequences,
-	infe_para['infe_frame_state'] : final_s})
+      big_frame_output_idx = (t // net.frame_size) % (net.big_frame_size // net.frame_size)
+      frame_out, final_s = sess.run(
+          [
+              infe_para['infe_frame_outp'], 
+		          infe_para['infe_final_frame_state']
+          ],
+          feed_dict={
+	            infe_para['infe_big_frame_outp_slices'] : big_frame_out[:,[big_frame_output_idx],:],
+	            infe_para['infe_frame_inp'] : frame_input_sequences,
+	            infe_para['infe_frame_state'] : final_s
+          }
+      )
     #sample
     sample_input_sequences = samples[:, t-net.frame_size:t,:]
     frame_output_idx = t%net.frame_size
@@ -248,11 +253,11 @@ def generate_and_save_samples(step, net, infe_para, sess):
           np.arange(net.q_levels), p=row )
       sample_next_list.append(sample_next)
     samples[:, t] = np.array(sample_next_list).reshape([-1,1])
-  for i in range(0, net.batch_size):
+  for i in range(net.batch_size):
     inp = samples[i].reshape([-1,1]).tolist()
     out = sess.run(infe_para['infe_decode'], 
 		feed_dict={infe_para['infe_sample_decode_inp']: inp})
-    write_wav(out, 16000, './test_'+str(step)+'_'+str(i)+'.wav')
+    write_wav(out, SAMPLE_RATE, './generated/test_'+str(step)+'_'+str(i)+'.wav')
     if i >= 10:
       break
       
@@ -284,7 +289,7 @@ def main():
   train_frame_state = []
   final_big_frame_state = []
   final_frame_state = []
-  for i in xrange(args.num_gpus):
+  for i in range(args.num_gpus):
     train_input_batch_rnn.append(tf.Variable( tf.zeros([net.batch_size, net.seq_len,1]), 
                       trainable=False ,name="input_batch_rnn", dtype=tf.float32))
     train_big_frame_state.append(net.big_cell.zero_state(net.batch_size, tf.float32))
@@ -292,7 +297,7 @@ def main():
     train_frame_state.append    (net.cell.zero_state(net.batch_size, tf.float32))
     final_frame_state.append    (net.cell.zero_state(net.batch_size, tf.float32))
   with tf.variable_scope(tf.get_variable_scope()):
-    for i in xrange(args.num_gpus):
+    for i in range(args.num_gpus):
       with tf.device('/gpu:%d' % i):
         with tf.name_scope('TOWER_%d' % (i)) as scope:
           # Create model.
@@ -308,16 +313,17 @@ def main():
           losses.append(loss)
           # Reuse variables for the next tower.
           trainable = tf.trainable_variables()
-          gradients = optim.compute_gradients(loss,trainable,\
-      		aggregation_method=tf.AggregationMethod.EXPERIMENTAL_ACCUMULATE_N)
+          gradients = optim.compute_gradients(loss,trainable, \
+      		    aggregation_method=tf.AggregationMethod.EXPERIMENTAL_ACCUMULATE_N)
           tower_grads.append(gradients)
   grad_vars = average_gradients(tower_grads)
-  grads, vars = zip(*grad_vars)
+  grads, vars = list(zip(*grad_vars))
   grads_clipped, _ = tf.clip_by_global_norm(grads, 5.0)
-  grad_vars = zip(grads_clipped, vars)
+  grad_vars = list(zip(grads_clipped, vars))
 
   for name in grad_vars:  
-    print(name) 
+    print(name)
+
   apply_gradient_op = optim.apply_gradients(grad_vars, global_step=global_step) 
 #################
   infe_para = create_gen_wav_para(net)
@@ -357,21 +363,21 @@ def main():
   last_saved_step = saved_global_step
   try:
     for step in range(saved_global_step + 1, args.num_steps):
-      if (step-1) % 20 == 0 and step>20:
+      if (step-1) % GENERATE_EVERY == 0 and step > GENERATE_EVERY:
         generate_and_save_samples(step,net, infe_para, sess)
 
       final_big_s = []
       final_s = []
-      for g in xrange(args.num_gpus):
+      for g in range(args.num_gpus):
         final_big_s.append(sess.run(net.big_initial_state))
         final_s.append(sess.run(net.initial_state))
       start_time = time.time()
-      inputslist = [sess.run(audio_batch) for i in xrange(args.num_gpus)]
+      inputslist = [sess.run(audio_batch) for i in range(args.num_gpus)]
       loss_sum = 0;
       idx_begin=0
       audio_length = args.sample_size - args.big_frame_size
       bptt_length = args.seq_len - args.big_frame_size
-      stateful_rnn_length = audio_length/bptt_length 
+      stateful_rnn_length = audio_length // bptt_length 
       outp_list=[summaries,\
       	     losses, \
       	     apply_gradient_op, \
@@ -379,7 +385,7 @@ def main():
 	     final_frame_state]
       for i in range(0, stateful_rnn_length):
         inp_dict={}
-        for g in xrange(args.num_gpus):
+        for g in range(args.num_gpus):
           inp_dict[train_input_batch_rnn[g]] = \
       	      inputslist[g][:, idx_begin: idx_begin+args.seq_len,:]
           inp_dict[train_big_frame_state[g]] = final_big_s[g]
@@ -389,7 +395,7 @@ def main():
         summary, loss_gpus,_, final_big_s, final_s= \
         	sess.run(outp_list, feed_dict=inp_dict)
         writer.add_summary(summary, step)
-        for g in xrange(args.num_gpus):
+        for g in range(args.num_gpus):
           loss_gpu = loss_gpus[g]/stateful_rnn_length
           loss_sum += loss_gpu/args.num_gpus
       duration = time.time() - start_time

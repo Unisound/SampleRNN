@@ -11,10 +11,10 @@ import numpy as np
 import tensorflow as tf
 
 def randomize_files(files):
-  files_idx= [i for i in xrange(len(files))]
+  files_idx= [i for i in range(len(files))]
   random.shuffle(files_idx)
 
-  for idx in xrange(len(files)):
+  for idx in range(len(files)):
     yield files[files_idx[idx]]
 
 def find_files(directory, pattern='*.wav'):
@@ -97,7 +97,7 @@ class AudioReader(object):
                                 np.full((pad_elements, 1), 0.0, dtype='float32')],
                                 axis=0)
         if self.sample_size:
-          while len(audio) > self.sample_size:
+          while len(audio) >= self.sample_size:
             piece = audio[:self.sample_size, :]
             sess.run(self.enqueue,
                      feed_dict={self.sample_placeholder: piece})
