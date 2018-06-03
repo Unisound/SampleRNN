@@ -160,61 +160,123 @@ def average_gradients(tower_grads):
 def create_gen_wav_para(net):
     with tf.name_scope('infe_para'):
         infe_para = dict()
-        infe_para['infe_big_frame_inp'] = \
-            tf.get_variable("infe_big_frame_inp",
-                            [net.batch_size, net.big_frame_size, 1], dtype=tf.float32)
-        infe_para['infe_big_frame_outp'] = \
-            tf.get_variable("infe_big_frame_outp",
-                            [net.batch_size, net.big_frame_size/net.frame_size, net.dim], dtype=tf.float32)
+        infe_para['infe_big_frame_inp'] = tf.get_variable(
+            "infe_big_frame_inp",
+            [
+                net.batch_size,
+                net.big_frame_size,
+                1
+            ],
+            dtype=tf.float32
+        )
+        infe_para['infe_big_frame_outp'] = tf.get_variable(
+            "infe_big_frame_outp",
+            [
+                net.batch_size,
+                net.big_frame_size / net.frame_size,
+                net.dim
+            ],
+            dtype=tf.float32)
 
-        infe_para['infe_big_frame_outp_slices'] = \
-            tf.get_variable("infe_big_frame_outp_slices",
-                            [net.batch_size, 1, net.dim], dtype=tf.float32)
-        infe_para['infe_frame_inp'] = \
-            tf.get_variable("infe_frame_inp",
-                            [net.batch_size, net.frame_size, 1], dtype=tf.float32)
-        infe_para['infe_frame_outp'] = \
-            tf.get_variable("infe_frame_outp",
-                            [net.batch_size, net.frame_size, net.dim], dtype=tf.float32)
+        infe_para['infe_big_frame_outp_slices'] = tf.get_variable(
+            "infe_big_frame_outp_slices",
+            [
+                net.batch_size,
+                1,
+                net.dim
+            ],
+            dtype=tf.float32
+        )
+        infe_para['infe_frame_inp'] = tf.get_variable(
+            "infe_frame_inp",
+            [
+                net.batch_size,
+                net.frame_size,
+                1
+            ],
+            dtype=tf.float32
+        )
+        infe_para['infe_frame_outp'] = tf.get_variable(
+            "infe_frame_outp",
+            [
+                net.batch_size,
+                net.frame_size,
+                net.dim
+            ],
+            dtype=tf.float32
+        )
 
-        infe_para['infe_frame_outp_slices'] = \
-            tf.get_variable("infe_frame_outp_slices",
-                            [net.batch_size, 1, net.dim], dtype=tf.float32)
-        infe_para['infe_sample_inp'] = \
-            tf.get_variable("infe_sample_inp",
-                            [net.batch_size, net.frame_size, 1], dtype=tf.int32)
+        infe_para['infe_frame_outp_slices'] = tf.get_variable(
+            "infe_frame_outp_slices",
+            [
+                net.batch_size,
+                1,
+                net.dim
+            ],
+            dtype=tf.float32
+        )
+        infe_para['infe_sample_inp'] = tf.get_variable(
+            "infe_sample_inp",
+            [
+                net.batch_size,
+                net.frame_size,
+                1
+            ],
+            dtype=tf.int32
+        )
 
         infe_para['infe_big_frame_state'] = net.big_cell.zero_state(
-            net.batch_size, tf.float32)
+            net.batch_size,
+            tf.float32
+        )
         infe_para['infe_frame_state'] = net.cell.zero_state(
-            net.batch_size, tf.float32)
+            net.batch_size,
+            tf.float32
+        )
 
         tf.get_variable_scope().reuse_variables()
         infe_para['infe_big_frame_outp'], \
-            infe_para['infe_final_big_frame_state'] = \
-            net._create_network_BigFrame(num_steps=1,
-                                         big_frame_state=infe_para['infe_big_frame_state'],
-                                         big_input_sequences=infe_para['infe_big_frame_inp'])
+            infe_para[
+                'infe_final_big_frame_state'
+        ] = net._create_network_BigFrame(
+                num_steps=1,
+                big_frame_state=infe_para['infe_big_frame_state'],
+                big_input_sequences=infe_para['infe_big_frame_inp']
+        )
 
         infe_para['infe_frame_outp'], \
-            infe_para['infe_final_frame_state'] = \
-            net._create_network_Frame(num_steps=1,
-                                      big_frame_outputs=infe_para['infe_big_frame_outp_slices'],
-                                      frame_state=infe_para['infe_frame_state'],
-                                      input_sequences=infe_para['infe_frame_inp'])
+            infe_para['infe_final_frame_state'] = net._create_network_Frame(
+                num_steps=1,
+                big_frame_outputs=infe_para['infe_big_frame_outp_slices'],
+                frame_state=infe_para['infe_frame_state'],
+                input_sequences=infe_para['infe_frame_inp']
+        )
 
-        sample_out = \
-            net._create_network_Sample(frame_outputs=infe_para['infe_frame_outp_slices'],
-                                       sample_input_sequences=infe_para['infe_sample_inp'])
-        sample_out = \
-            tf.reshape(sample_out, [-1, net.q_levels])
+        sample_out = net._create_network_Sample(
+            frame_outputs=infe_para['infe_frame_outp_slices'],
+            sample_input_sequences=infe_para['infe_sample_inp']
+        )
+        sample_out = tf.reshape(
+            sample_out,
+            [-1, net.q_levels]
+        )
         infe_para['infe_sample_outp'] = tf.cast(
-            tf.nn.softmax(tf.cast(sample_out, tf.float64)), tf.float32)
+            tf.nn.softmax(
+                tf.cast(
+                    sample_out,
+                    tf.float64
+                )
+            ),
+            tf.float32
+        )
 
-        infe_para['infe_sample_decode_inp'] = \
-            tf.placeholder(tf.int32)
-        infe_para['infe_decode'] = \
-            mu_law_decode(infe_para['infe_sample_decode_inp'], net.q_levels)
+        infe_para['infe_sample_decode_inp'] = tf.placeholder(
+            tf.int32
+        )
+        infe_para['infe_decode'] = mu_law_decode(
+            infe_para['infe_sample_decode_inp'],
+            net.q_levels
+        )
 
         return infe_para
 
@@ -237,27 +299,46 @@ def generate_and_save_samples(step, net, infe_para, sess):
         # big frame
         if t % net.big_frame_size == 0:
             big_frame_out = None
-            big_input_sequences = samples[:, t -
-                                          net.big_frame_size:t, :].astype('float32')
-            big_frame_out, final_big_s = \
-                sess.run([infe_para['infe_big_frame_outp'],
-                          infe_para['infe_final_big_frame_state']],
-                         feed_dict={
+            big_input_sequences = samples[
+                :,
+                t - net.big_frame_size:t,
+                :
+            ].astype('float32')
+            big_frame_out, final_big_s = sess.run(
+                [
+                    infe_para[
+                        'infe_big_frame_outp'
+                    ],
+                    infe_para['infe_final_big_frame_state']
+                ],
+                feed_dict={
                     infe_para['infe_big_frame_inp']: big_input_sequences,
-                    infe_para['infe_big_frame_state']: final_big_s})
+                    infe_para['infe_big_frame_state']: final_big_s
+                }
+            )
         # frame
         if t % net.frame_size == 0:
-            frame_input_sequences = samples[:, t -
-                                            net.frame_size:t, :].astype('float32')
+            frame_input_sequences = samples[
+                :,
+                t - net.frame_size:t,
+                :
+            ].astype('float32')
             big_frame_output_idx = (
-                t // net.frame_size) % (net.big_frame_size // net.frame_size)
+                t // net.frame_size
+            ) % (
+                net.big_frame_size // net.frame_size
+            )
             frame_out, final_s = sess.run(
                 [
                     infe_para['infe_frame_outp'],
                     infe_para['infe_final_frame_state']
                 ],
                 feed_dict={
-                    infe_para['infe_big_frame_outp_slices']: big_frame_out[:, [big_frame_output_idx], :],
+                    infe_para['infe_big_frame_outp_slices']: big_frame_out[
+                        :,
+                        [big_frame_output_idx],
+                        :
+                    ],
                     infe_para['infe_frame_inp']: frame_input_sequences,
                     infe_para['infe_frame_state']: final_s
                 }
@@ -265,11 +346,17 @@ def generate_and_save_samples(step, net, infe_para, sess):
         # sample
         sample_input_sequences = samples[:, t-net.frame_size:t, :]
         frame_output_idx = t % net.frame_size
-        sample_out = \
-            sess.run(infe_para['infe_sample_outp'],
-                     feed_dict={
-                infe_para['infe_frame_outp_slices']: frame_out[:, [frame_output_idx], :],
-                infe_para['infe_sample_inp']: sample_input_sequences})
+        sample_out = sess.run(
+            infe_para['infe_sample_outp'],
+            feed_dict={
+                infe_para['infe_frame_outp_slices']: frame_out[
+                    :,
+                    [frame_output_idx],
+                    :
+                ],
+                infe_para['infe_sample_inp']: sample_input_sequences
+            }
+        )
         sample_next_list = []
         for row in sample_out:
             sample_next = np.random.choice(
@@ -301,8 +388,12 @@ def main():
                              silence_threshold=args.silence_threshold)
         audio_batch = reader.dequeue(args.batch_size)
     net = create_model(args)
-    global_step = tf.get_variable('global_step',
-                                  [], initializer=tf.constant_initializer(0), trainable=False)
+    global_step = tf.get_variable(
+        'global_step',
+        [],
+        initializer=tf.constant_initializer(0),
+        trainable=False
+    )
     optim = optimizer_factory[args.optimizer](
         learning_rate=args.learning_rate,
         momentum=args.momentum)
@@ -315,8 +406,16 @@ def main():
     final_big_frame_state = []
     final_frame_state = []
     for i in range(args.num_gpus):
-        train_input_batch_rnn.append(tf.Variable(tf.zeros([net.batch_size, net.seq_len, 1]),
-                                                 trainable=False, name="input_batch_rnn", dtype=tf.float32))
+        train_input_batch_rnn.append(
+            tf.Variable(
+                tf.zeros(
+                    [net.batch_size, net.seq_len, 1]
+                ),
+                trainable=False,
+                name="input_batch_rnn",
+                dtype=tf.float32
+            )
+        )
         train_big_frame_state.append(
             net.big_cell.zero_state(net.batch_size, tf.float32))
         final_big_frame_state.append(
@@ -331,19 +430,25 @@ def main():
                 with tf.name_scope('TOWER_%d' % (i)) as scope:
                     # Create model.
                     print("Creating model On Gpu:%d." % (i))
-                    loss,\
-                        final_big_frame_state[i],\
-                        final_frame_state[i] = net.loss_SampleRnn(
+                    (
+                        loss,
+                        final_big_frame_state[i],
+                        final_frame_state[i]=net.loss_SampleRnn(
                             train_input_batch_rnn[i],
                             train_big_frame_state[i],
                             train_frame_state[i],
-                            l2_regularization_strength=args.l2_regularization_strength)
+                            l2_regularization_strength=args.l2_regularization_strength  # noqa: E501
+                        )
+                    )
                     tf.get_variable_scope().reuse_variables()
                     losses.append(loss)
                     # Reuse variables for the next tower.
                     trainable = tf.trainable_variables()
-                    gradients = optim.compute_gradients(loss, trainable,
-                                                        aggregation_method=tf.AggregationMethod.EXPERIMENTAL_ACCUMULATE_N)
+                    gradients = optim.compute_gradients(
+                        loss,
+                        trainable,
+                        aggregation_method=tf.AggregationMethod.EXPERIMENTAL_ACCUMULATE_N   # noqa: E501
+                    )
                     tower_grads.append(gradients)
     grad_vars = average_gradients(tower_grads)
     grads, vars = list(zip(*grad_vars))
