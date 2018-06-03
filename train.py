@@ -433,13 +433,13 @@ def main():
                     (
                         loss,
                         final_big_frame_state[i],
-                        final_frame_state[i]=net.loss_SampleRnn(
-                            train_input_batch_rnn[i],
-                            train_big_frame_state[i],
-                            train_frame_state[i],
-                            l2_regularization_strength=args.l2_regularization_strength  # noqa: E501
-                        )
-                    )
+                        final_frame_state[i]
+                    )=net.loss_SampleRnn(
+                        train_input_batch_rnn[i],
+                        train_big_frame_state[i],
+                        train_frame_state[i],
+                        l2_regularization_strength=args.l2_regularization_strength  # noqa: E501
+                    )              
                     tf.get_variable_scope().reuse_variables()
                     losses.append(loss)
                     # Reuse variables for the next tower.
