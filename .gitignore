@@ -1,0 +1,8 @@
+/Include
+/Lib
+/Scripts
+/tcl
+/datasets
+/logdir/train/*
+pip-selfcheck.json
+__pycache__
