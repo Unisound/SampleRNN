@@ -9,8 +9,12 @@ import time
 import librosa
 import numpy as np
 import tensorflow as tf
+
 from tensorflow.python.client import timeline
-from samplernn import SampleRnnModel, AudioReader, mu_law_decode, optimizer_factory
+from samplernn import SampleRnnModel
+from samplernn import AudioReader
+from samplernn import mu_law_decode
+from samplernn import optimizer_factory
 
 DATA_DIRECTORY = './pinao-corpus'
 LOGDIR_ROOT = './logdir'
@@ -222,61 +226,66 @@ def write_wav(waveform, sample_rate, filename):
 
 
 def generate_and_save_samples(step, net, infe_para, sess):
-  samples = np.zeros((net.batch_size, LENGTH, 1), dtype='int32')
-  samples[:, :net.big_frame_size,:] = np.int32(net.q_levels//2)
+    samples = np.zeros((net.batch_size, LENGTH, 1), dtype='int32')
+    samples[:, :net.big_frame_size, :] = np.int32(net.q_levels//2)
 
-  final_big_s,final_s = sess.run([net.big_initial_state,net.initial_state])
-  big_frame_out = None
-  frame_out = None
-  sample_out = None
-  for t in range(net.big_frame_size, LENGTH):
-    #big frame 
-    if t % net.big_frame_size == 0:
-      big_frame_out = None
-      big_input_sequences = samples[:, t-net.big_frame_size:t,:].astype('float32')
-      big_frame_out, final_big_s= \
-      sess.run([infe_para['infe_big_frame_outp'] , 
-		infe_para['infe_final_big_frame_state'] ],
-               feed_dict={
-                  infe_para['infe_big_frame_inp'] : big_input_sequences,
-                  infe_para['infe_big_frame_state'] : final_big_s})
-    #frame 
-    if t % net.frame_size == 0:
-      frame_input_sequences = samples[:, t-net.frame_size:t,:].astype('float32')
-      big_frame_output_idx = (t // net.frame_size) % (net.big_frame_size // net.frame_size)
-      frame_out, final_s = sess.run(
-          [
-              infe_para['infe_frame_outp'], 
-		          infe_para['infe_final_frame_state']
-          ],
-          feed_dict={
-	            infe_para['infe_big_frame_outp_slices'] : big_frame_out[:,[big_frame_output_idx],:],
-	            infe_para['infe_frame_inp'] : frame_input_sequences,
-	            infe_para['infe_frame_state'] : final_s
-          }
-      )
-    #sample
-    sample_input_sequences = samples[:, t-net.frame_size:t,:]
-    frame_output_idx = t%net.frame_size
-    sample_out= \
-    sess.run(infe_para['infe_sample_outp'],
-             feed_dict={
-                infe_para['infe_frame_outp_slices'] : frame_out[:,[frame_output_idx],:],
-                infe_para['infe_sample_inp'] : sample_input_sequences})
-    sample_next_list = []
-    for row in sample_out:
-      sample_next = np.random.choice(
-          np.arange(net.q_levels), p=row )
-      sample_next_list.append(sample_next)
-    samples[:, t] = np.array(sample_next_list).reshape([-1,1])
-  for i in range(net.batch_size):
-    inp = samples[i].reshape([-1,1]).tolist()
-    out = sess.run(infe_para['infe_decode'], 
-		feed_dict={infe_para['infe_sample_decode_inp']: inp})
-    write_wav(out, SAMPLE_RATE, './generated/test_'+str(step)+'_'+str(i)+'.wav')
-    if i >= 10:
-      break
-      
+    final_big_s, final_s = sess.run([net.big_initial_state, net.initial_state])
+    big_frame_out = None
+    frame_out = None
+    sample_out = None
+    for t in range(net.big_frame_size, LENGTH):
+        # big frame
+        if t % net.big_frame_size == 0:
+            big_frame_out = None
+            big_input_sequences = samples[:, t -
+                                          net.big_frame_size:t, :].astype('float32')
+            big_frame_out, final_big_s = \
+                sess.run([infe_para['infe_big_frame_outp'],
+                          infe_para['infe_final_big_frame_state']],
+                         feed_dict={
+                    infe_para['infe_big_frame_inp']: big_input_sequences,
+                    infe_para['infe_big_frame_state']: final_big_s})
+        # frame
+        if t % net.frame_size == 0:
+            frame_input_sequences = samples[:, t -
+                                            net.frame_size:t, :].astype('float32')
+            big_frame_output_idx = (
+                t // net.frame_size) % (net.big_frame_size // net.frame_size)
+            frame_out, final_s = sess.run(
+                [
+                    infe_para['infe_frame_outp'],
+                    infe_para['infe_final_frame_state']
+                ],
+                feed_dict={
+                    infe_para['infe_big_frame_outp_slices']: big_frame_out[:, [big_frame_output_idx], :],
+                    infe_para['infe_frame_inp']: frame_input_sequences,
+                    infe_para['infe_frame_state']: final_s
+                }
+            )
+        # sample
+        sample_input_sequences = samples[:, t-net.frame_size:t, :]
+        frame_output_idx = t % net.frame_size
+        sample_out = \
+            sess.run(infe_para['infe_sample_outp'],
+                     feed_dict={
+                infe_para['infe_frame_outp_slices']: frame_out[:, [frame_output_idx], :],
+                infe_para['infe_sample_inp']: sample_input_sequences})
+        sample_next_list = []
+        for row in sample_out:
+            sample_next = np.random.choice(
+                np.arange(net.q_levels), p=row)
+            sample_next_list.append(sample_next)
+        samples[:, t] = np.array(sample_next_list).reshape([-1, 1])
+    for i in range(net.batch_size):
+        inp = samples[i].reshape([-1, 1]).tolist()
+        out = sess.run(infe_para['infe_decode'],
+                       feed_dict={infe_para['infe_sample_decode_inp']: inp})
+        write_wav(out, SAMPLE_RATE, './generated/test_' +
+                  str(step)+'_'+str(i)+'.wav')
+        if i >= 10:
+            break
+
+
 def main():
     args = get_arguments()
     if args.l2_regularization_strength == 0:
@@ -437,6 +446,7 @@ def main():
             save(saver, sess, logdir, step)
         coord.request_stop()
         coord.join(threads)
+
 
 if __name__ == '__main__':
     main()
