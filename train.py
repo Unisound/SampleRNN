@@ -68,6 +68,7 @@ def get_arguments():
     parser.add_argument('--emb_size',         type=int, required=True)
     parser.add_argument('--rnn_type', choices=['LSTM', 'GRU'], required=True)
     parser.add_argument('--max_checkpoints',  type=int, default=MAX_TO_KEEP)
+    parser.add_argument('--secs',             type=int, default=N_SECS)
     return parser.parse_args()
 
 
