@@ -3,9 +3,9 @@
 A Tensorflow implementation of [SampleRNN: An Unconditional End-to-End Neural Audio Generation Model](https://arxiv.org/abs/1612.07837).
 
 ## Requirements
-- Tensroflow 1.0  
-- Python 2.7  
-- Librosa   
+- Tensroflow 1.0(https://www.tensorflow.org/) 
+- Python 2.7(https://www.python.org/download/releases/2.7/)
+- Librosa(https://librosa.org/)   
 ## Dataset  
 We used the pinao music of 74 minutes as the training corpus, and you can use any corpus containing ".wav" files to instead as well.  
 For Mandarin samples, we used human voice of 6 hours as the training corpus .
